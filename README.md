@@ -90,11 +90,6 @@ chmod +x ./start.sh
 ./start.sh
 ```
 
-- **Frontend App**: [http://localhost:3000](http://localhost:3000)
-- **Backend API**: [http://localhost:8000](http://localhost:8000)
-- **Interactive Swagger Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
-
----
 
 ## 📁 Directory Structure
 
