@@ -37,8 +37,18 @@ import { AgentChatModal } from './components/AgentChatModal';
 import { SimulationDock } from './components/SimulationDock';
 import { NavigationHUD } from './components/NavigationHUD';
 import { NavTarget, openGoogleMapsNavigation } from './services/navigation';
+import {
+  Sidebar,
+  SidebarHeader,
+  SidebarNav,
+  SidebarSection,
+  SidebarItem,
+  SidebarFooter,
+  SidebarToggle,
+} from '@/components/ui/sidebar';
+import Demo from '@/components/ui/demo';
 
-type ViewMode = 'driver' | 'operator';
+type ViewMode = 'driver' | 'operator' | 'demo';
 
 export const App: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('driver');

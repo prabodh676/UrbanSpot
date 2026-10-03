@@ -6,6 +6,7 @@ backend/venv/
 .venv/
 env/
 
+.env
 # Production build artifacts
 dist/
 frontend/dist/
