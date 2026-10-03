@@ -14,7 +14,8 @@ import {
   CheckCircle2,
   X,
   ChevronRight,
-  WifiOff
+  WifiOff,
+  Download
 } from 'lucide-react';
 import { ParkingLot, StreetSpot, Reservation, ForecastData, UserPersona, RouteInfo } from '../types';
 import * as api from '../services/api';
@@ -161,6 +162,28 @@ export const DriverPhoneView: React.FC<DriverPhoneViewProps> = ({
     } finally {
       setIsHolding(false);
     }
+  };
+
+  const handleDownloadOfflinePass = () => {
+    if (!activeReservation) return;
+    const passContent = `UrbanSpot Offline Pass
+----------------------
+Lot: ${activeReservation.lot_name || 'Reserved Facility'}
+Bay: ${activeReservation.slot_id}
+PIN: ${activeReservation.pin_code}
+Status: ${activeReservation.status.toUpperCase()}
+
+Keep this PIN ready at the gate. Valid for offline entry.`;
+    
+    const blob = new Blob([passContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `urbanspot-pass-${activeReservation.slot_id}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   // Confirm Reservation
@@ -762,6 +785,14 @@ export const DriverPhoneView: React.FC<DriverPhoneViewProps> = ({
                       <span>Confirm & Prepay Booking</span>
                     </button>
                   )}
+
+                  <button
+                    onClick={handleDownloadOfflinePass}
+                    className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold rounded-xl text-xs transition shadow-lg shadow-blue-600/30 active:scale-95 flex items-center justify-center space-x-2 cursor-pointer"
+                  >
+                    <Download className="w-4 h-4 text-blue-200" />
+                    <span>Download Offline Pass</span>
+                  </button>
 
                   <button
                     onClick={handleCancelReservation}
