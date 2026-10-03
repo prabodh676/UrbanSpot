@@ -21,6 +21,8 @@ interface OperatorDashboardViewProps {
   onRefresh: () => void;
   onSelectLot: (lot: ParkingLot) => void;
   selectedLot: ParkingLot | null;
+  onLogout?: () => void;
+  operatorEmail?: string | null;
 }
 
 export const OperatorDashboardView: React.FC<OperatorDashboardViewProps> = ({
@@ -29,6 +31,8 @@ export const OperatorDashboardView: React.FC<OperatorDashboardViewProps> = ({
   onRefresh,
   onSelectLot,
   selectedLot,
+  onLogout,
+  operatorEmail,
 }) => {
   const [isSimulatingEvent, setIsSimulatingEvent] = useState(false);
   const [selectedGateLotId, setSelectedGateLotId] = useState<string>(lots[0]?.id || 'lot-cyber-towers');
@@ -76,13 +80,33 @@ export const OperatorDashboardView: React.FC<OperatorDashboardViewProps> = ({
           </p>
         </div>
 
-        <button
-          onClick={onRefresh}
-          className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold flex items-center space-x-1.5 border border-slate-700 transition"
-        >
-          <RefreshCw className="w-3.5 h-3.5" />
-          <span>Refresh</span>
-        </button>
+        <div className="flex items-center space-x-2">
+          {operatorEmail && (
+            <div className="hidden sm:flex items-center space-x-1.5 px-3 py-1 bg-slate-900 border border-slate-700 rounded-xl text-xs text-slate-300">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="font-mono text-[11px] truncate max-w-[160px]">{operatorEmail}</span>
+            </div>
+          )}
+
+          <button
+            onClick={onRefresh}
+            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold flex items-center space-x-1.5 border border-slate-700 transition cursor-pointer"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Refresh</span>
+          </button>
+
+          {onLogout && (
+            <button
+              onClick={onLogout}
+              className="px-3 py-1.5 bg-red-950/60 hover:bg-red-900/80 text-red-200 border border-red-800/80 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition cursor-pointer"
+              title="Sign out of Operator mode"
+            >
+              <LogOut className="w-3.5 h-3.5 text-red-400" />
+              <span className="hidden sm:inline">Sign Out</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* KPI Stats Cards */}

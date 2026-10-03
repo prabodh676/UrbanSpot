@@ -15,7 +15,9 @@ import {
   Layers,
   ChevronRight,
   Sun,
-  Moon
+  Moon,
+  Lock,
+  LogOut
 } from 'lucide-react';
 import {
   ParkingLot,
@@ -33,10 +35,12 @@ import * as outbox from './services/outbox';
 import { MapView } from './components/MapView';
 import { DriverPhoneView } from './components/DriverPhoneView';
 import { OperatorDashboardView } from './components/OperatorDashboardView';
+import { OperatorAuthModal } from './components/OperatorAuthModal';
 import { AgentChatModal } from './components/AgentChatModal';
 import { SimulationDock } from './components/SimulationDock';
 import { NavigationHUD } from './components/NavigationHUD';
 import { NavTarget, openGoogleMapsNavigation } from './services/navigation';
+import { supabase } from './lib/supabase';
 import {
   Sidebar,
   SidebarHeader,
@@ -98,6 +102,26 @@ export const App: React.FC = () => {
   const [isSimDockOpen, setIsSimDockOpen] = useState(false);
   const [showHeatmap, setShowHeatmap] = useState(true);
   const [navigatingTarget, setNavigatingTarget] = useState<NavTarget | null>(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [operatorUser, setOperatorUser] = useState<any>(null);
+
+  // Check initial Supabase auth state & listen for session changes
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setOperatorUser(session?.user ?? null);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setOperatorUser(session?.user ?? null);
+      if (!session) {
+        setViewMode('driver');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Simulation Status
   const [simStatus, setSimStatus] = useState<SimStatus>({
@@ -260,13 +284,13 @@ export const App: React.FC = () => {
           </div>
         </div>
 
-        {/* 2-View Segmented Switcher (Responsive, No Awkward Wrap) */}
+        {/* 2-View Segmented Switcher (Responsive, Protected Operator Mode) */}
         <div className="flex items-center bg-slate-950/90 p-0.5 sm:p-1 rounded-xl sm:rounded-2xl border border-slate-800 text-xs font-semibold shadow-inner shrink-0">
           <button
             onClick={() => setViewMode('driver')}
-            className={`px-2 sm:px-3.5 py-1 sm:py-1.5 rounded-lg sm:rounded-xl transition-all flex items-center space-x-1 sm:space-x-1.5 whitespace-nowrap ${
+            className={`px-2 sm:px-3.5 py-1 sm:py-1.5 rounded-lg sm:rounded-xl transition-all flex items-center space-x-1 sm:space-x-1.5 whitespace-nowrap cursor-pointer ${
               viewMode === 'driver'
-                ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-600/30'
+                ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-600/30 font-bold'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -274,18 +298,31 @@ export const App: React.FC = () => {
             <span className="hidden sm:inline">Driver Navigation</span>
             <span className="sm:hidden text-[11px] font-bold">Driver</span>
           </button>
-          <button
-            onClick={() => setViewMode('operator')}
-            className={`px-2 sm:px-3.5 py-1 sm:py-1.5 rounded-lg sm:rounded-xl transition-all flex items-center space-x-1 sm:space-x-1.5 whitespace-nowrap ${
-              viewMode === 'operator'
-                ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-600/30'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <BarChart3 className="w-3.5 h-3.5 shrink-0" />
-            <span className="hidden sm:inline">Operator Analytics</span>
-            <span className="sm:hidden text-[11px] font-bold">Operator</span>
-          </button>
+
+          {operatorUser ? (
+            <button
+              onClick={() => setViewMode('operator')}
+              className={`px-2 sm:px-3.5 py-1 sm:py-1.5 rounded-lg sm:rounded-xl transition-all flex items-center space-x-1 sm:space-x-1.5 whitespace-nowrap cursor-pointer ${
+                viewMode === 'operator'
+                  ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-600/30 font-bold'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <BarChart3 className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
+              <span className="hidden sm:inline">Operator Analytics</span>
+              <span className="sm:hidden text-[11px] font-bold">Operator</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => setIsAuthModalOpen(true)}
+              className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl transition-all flex items-center space-x-1 sm:space-x-1.5 whitespace-nowrap text-slate-400 hover:text-indigo-300 hover:bg-slate-900 cursor-pointer"
+              title="Operator Portal (Login Required)"
+            >
+              <Lock className="w-3 h-3 text-slate-500" />
+              <span className="hidden sm:inline text-xs">Operator Login</span>
+              <span className="sm:hidden text-[11px]">Login</span>
+            </button>
+          )}
         </div>
 
         {/* Controls & Badges (Responsive & Mobile-Optimized) */}
@@ -488,17 +525,40 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {/* OPERATOR ANALYTICS VIEW */}
+        {/* OPERATOR ANALYTICS VIEW (Strictly Protected) */}
         {viewMode === 'operator' && (
-          <div className="w-full h-full">
-            <OperatorDashboardView
-              analytics={analytics}
-              lots={lots}
-              onRefresh={loadData}
-              onSelectLot={setSelectedLot}
-              selectedLot={selectedLot}
-            />
-          </div>
+          operatorUser ? (
+            <div className="w-full h-full">
+              <OperatorDashboardView
+                analytics={analytics}
+                lots={lots}
+                onRefresh={loadData}
+                onSelectLot={setSelectedLot}
+                selectedLot={selectedLot}
+                operatorEmail={operatorUser?.email}
+                onLogout={async () => {
+                  await supabase.auth.signOut();
+                  setViewMode('driver');
+                }}
+              />
+            </div>
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center bg-slate-950 p-6 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 mb-4 shadow-xl">
+                <Lock className="w-8 h-8" />
+              </div>
+              <h2 className="text-xl font-bold text-white mb-2">Restricted Access</h2>
+              <p className="text-xs text-slate-400 max-w-sm mb-5 leading-relaxed">
+                UrbanSpot Operator Analytics requires verified credentials. Normal drivers cannot view occupancy analytics, dynamic pricing, or gate controls.
+              </p>
+              <button
+                onClick={() => setIsAuthModalOpen(true)}
+                className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-indigo-600/30 transition cursor-pointer"
+              >
+                Sign In as Operator
+              </button>
+            </div>
+          )
         )}
 
         {/* Live Turn-by-Turn Navigation HUD System */}
@@ -527,6 +587,15 @@ export const App: React.FC = () => {
         onSelectLot={setSelectedLot}
         onNavigateToLot={handleNavigateToLot}
         userId={persona.id}
+      />
+
+      {/* Operator Authentication Modal (Supabase Auth) */}
+      <OperatorAuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onAuthenticated={() => {
+          setViewMode('operator');
+        }}
       />
 
     </div>
