@@ -13,17 +13,17 @@ Built following the modular monolith architecture outlined in the specification:
 ```mermaid
 flowchart TD
     subgraph Clients
-        D["Driver PWA (Mobile Frame)"]
+        D["Driver Navigation PWA"]
         O["Operator Analytics Dashboard"]
         S["IoT Stream Simulator"]
     end
 
-    OFF["Offline Layer (IndexedDB Outbox, Caching)"]
+    OFF["Offline Layer (Local Outbox, Caching)"]
     D --> OFF --> GW["FastAPI Monolith Gateway"]
     O --> GW
     S --> GW
 
-    subgraph Backend Services
+    subgraph BS["Backend Services"]
         DISC["Geo-Discovery & Multi-Factor Ranking"]
         AVAIL["Event-Sourced Occupancy + WebSocket Stream"]
         RES["Atomic Reservations (TTL Holds + Unique Locks)"]
@@ -33,9 +33,9 @@ flowchart TD
         SIM["Live IoT Stream Generator"]
     end
 
-    GW --> Backend Services
-    Backend Services --> DB[("SQLite WAL (Spatial Math + Persistence)")]
-    Backend Services --> CACHE[("In-Memory Fast Cache + Pub/Sub")]
+    GW --> BS
+    BS --> DB[("SQLite Database + Supabase Sync")]
+    BS --> CACHE[("In-Memory Fast Cache + Pub/Sub")]
 ```
 
 ### 1. Offline-First Driver PWA
@@ -60,7 +60,7 @@ flowchart TD
 
 ### 4. Blended Occupancy Forecasting
 - Blends real-time EWMA arrival & exit rates with historical hour-of-week ML baselines:
-  $$\text{eta\_full} = \frac{\text{free\_slots}}{\max(\text{arrival\_rate} - \text{exit\_rate}, \epsilon)}$$
+  $$\text{ETA}_{\text{full}} = \frac{\text{Free Slots}}{\max(\text{Arrival Rate} - \text{Exit Rate}, \epsilon)}$$
 - Estimates probability of a facility being full when the driver arrives.
 
 ### 5. Live IoT Stream Simulation Control Dock
@@ -74,12 +74,19 @@ flowchart TD
 
 ---
 
-## 🚀 Quick Start (One Command)
+## 🚀 Quick Start
 
-To run both backend and frontend simultaneously:
+To launch both backend and frontend servers simultaneously:
 
+**Windows (PowerShell / Command Prompt):**
+```powershell
+.\start.bat
+# or: .\start.ps1
+```
+
+**macOS / Linux:**
 ```bash
-cd /home/player1/Documents/3VN
+chmod +x ./start.sh
 ./start.sh
 ```
 
@@ -92,44 +99,29 @@ cd /home/player1/Documents/3VN
 ## 📁 Directory Structure
 
 ```
-3VN/
-├── start.sh                      # Launch script for backend and frontend
+UrbanSpot/
+├── start.bat                     # Windows launch script
+├── start.ps1                     # PowerShell launch script
+├── start.sh                      # Unix/macOS launch script
 ├── README.md                     # Documentation
 ├── backend/
-│   ├── parking.db                # SQLite database with Hyderabad seeds
-│   ├── venv/                     # Python virtual environment
+│   ├── requirements.txt          # Python dependencies
 │   └── app/
 │       ├── main.py               # FastAPI entrypoint & WebSocket handler
-│       ├── config.py             # Config & settings
-│       ├── database.py           # SQLite schema, spatial math, 18 seeded lots
+│       ├── config.py             # Config & Supabase connection
+│       ├── database.py           # SQLite schema, spatial math, 35 Hyderabad seeds
 │       ├── cache.py              # In-memory Redis-compatible cache & pub/sub
-│       ├── routers/
-│       │   ├── lots.py           # /api/lots (discovery, detail, forecast)
-│       │   ├── events.py         # /api/events (entry/exit ingest)
-│       │   ├── reservations.py   # /api/reservations (hold, confirm, cancel)
-│       │   ├── street.py         # /api/street (Spotter reports, claims)
-│       │   ├── routing.py        # /api/route (turn-by-turn navigation)
-│       │   ├── agent.py          # /api/agent (AI copilot chat)
-│       │   ├── analytics.py      # /api/analytics (KPIs, hourly rollups)
-│       │   └── sim.py            # /api/sim (traffic scenario triggers)
-│       └── services/             # Core business logic modules
+│       ├── routers/              # API endpoints (lots, events, reservations, agent, street)
+│       └── services/             # Core business logic (occupancy, forecasting, agent)
 └── frontend/
     ├── package.json
     ├── vite.config.ts
     ├── tailwind.config.js
     └── src/
-        ├── App.tsx               # Unified SPA & split-screen demo manager
+        ├── App.tsx               # Unified SPA & view switcher
         ├── types.ts              # TypeScript interfaces
-        ├── services/
-        │   ├── api.ts            # REST client & WebSocket manager
-        │   └── outbox.ts         # Offline outbox & local cache engine
-        └── components/
-            ├── MapView.tsx       # MapLibre GL dark map with live markers
-            ├── DriverPhoneView.tsx # Realistic mobile PWA viewport frame
-            ├── OperatorDashboardView.tsx # Operator control & analytics
-            ├── AgentChatModal.tsx # Natural-language AI assistant drawer
-            ├── SimulationDock.tsx # Live IoT simulation floating dock
-            └── OfflineOutboxDrawer.tsx # Outbox inspector & network toggler
+        ├── services/             # api.ts, outbox.ts, navigation.ts
+        └── components/           # MapView, DriverPhoneView, OperatorDashboardView, AgentChatModal
 ```
 
 ---
