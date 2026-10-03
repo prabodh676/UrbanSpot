@@ -1,6 +1,7 @@
 import { ParkingLot, Slot, ForecastData, StreetSpot, Reservation, RouteInfo, AgentResponse, AnalyticsOverview, SimStatus } from '../types';
 
-const BASE_URL = window.location.port === '3000' ? '' : 'http://localhost:8000';
+const ENV_API_URL = import.meta.env.VITE_API_URL ? String(import.meta.env.VITE_API_URL).replace(/\/$/, '') : '';
+const BASE_URL = ENV_API_URL || (window.location.port === '3000' ? '' : 'http://localhost:8000');
 
 export async function fetchLots(params?: {
   lat?: number;
@@ -198,16 +199,29 @@ export async function stopSimulation(): Promise<SimStatus> {
 }
 
 export function createWebSocketConnection(onMessage: (data: any) => void): WebSocket {
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const wsUrl = `${protocol}//${window.location.host}/api/ws`;
+  let wsUrl = '';
+  if (import.meta.env.VITE_WS_URL) {
+    const rawWs = String(import.meta.env.VITE_WS_URL).replace(/\/$/, '');
+    wsUrl = rawWs.endsWith('/api/ws') ? rawWs : `${rawWs}/api/ws`;
+  } else if (ENV_API_URL) {
+    const wsHost = ENV_API_URL.replace(/^http:\/\//, 'ws://').replace(/^https:\/\//, 'wss://');
+    wsUrl = `${wsHost}/api/ws`;
+  } else {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    wsUrl = `${protocol}//${window.location.host}/api/ws`;
+  }
 
   const ws = new WebSocket(wsUrl);
   ws.onopen = () => {
     // Subscribe to Hyderabad viewport
-    ws.send(JSON.stringify({
-      type: 'subscribe_viewport',
-      bbox: [78.30, 17.40, 78.45, 17.50]
-    }));
+    try {
+      ws.send(JSON.stringify({
+        type: 'subscribe_viewport',
+        bbox: [78.30, 17.40, 78.45, 17.50]
+      }));
+    } catch (e) {
+      console.warn('Failed to send viewport subscription:', e);
+    }
   };
   ws.onmessage = (event) => {
     try {
@@ -216,6 +230,9 @@ export function createWebSocketConnection(onMessage: (data: any) => void): WebSo
     } catch (e) {
       console.error('Failed to parse WS msg:', e);
     }
+  };
+  ws.onerror = (e) => {
+    console.warn('Live WebSocket stream not reachable (falling back to REST polling):', e);
   };
   return ws;
 }
