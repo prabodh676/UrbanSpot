@@ -1,7 +1,9 @@
 import asyncio
 import json
 from contextlib import asynccontextmanager
+# pyrefly: ignore [missing-import]
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+# pyrefly: ignore [missing-import]
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import init_db
@@ -105,5 +107,6 @@ async def websocket_endpoint(websocket: WebSocket):
             client_task.cancel()
 
 if __name__ == "__main__":
+    # pyrefly: ignore [missing-import]
     import uvicorn
     uvicorn.run("app.main:app", host=settings.HOST, port=settings.PORT, reload=True)
