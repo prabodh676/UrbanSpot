@@ -5,7 +5,6 @@ import {
   X,
   Bot,
   User,
-  Wrench,
   CheckCircle,
   Navigation,
   ArrowRight,
@@ -142,23 +141,6 @@ export const AgentChatModal: React.FC<AgentChatModalProps> = ({
                 {/* Message body */}
                 <div className="whitespace-pre-line leading-relaxed">{msg.text}</div>
 
-                {/* If Tool Calls executed, render tool badges */}
-                {msg.data?.tool_calls && msg.data.tool_calls.length > 0 && (
-                  <div className="mt-3 pt-2.5 border-t border-slate-800/80 space-y-1.5">
-                    <div className="text-[10px] font-bold text-slate-400 flex items-center space-x-1">
-                      <Wrench className="w-3 h-3 text-indigo-400" />
-                      <span>Tools Invoked During Reasoning:</span>
-                    </div>
-                    <div className="grid grid-cols-1 gap-1">
-                      {msg.data.tool_calls.map((t, idx) => (
-                        <div key={idx} className="p-1.5 bg-slate-900 rounded-lg border border-slate-800 text-[10px] flex items-center justify-between">
-                          <code className="text-indigo-300 font-mono font-semibold">{t.name}()</code>
-                          <span className="text-slate-400 text-[9px] truncate max-w-[220px]">{t.result_summary}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
                 {/* Action Card for recommended lot */}
                 {msg.data?.recommended_lot && (
