@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+venv/
+backend/venv/
+.venv/
+env/
+
+# Production build artifacts
+dist/
+frontend/dist/
+build/
+
+# Python cache & runtime database
+__pycache__/
+*.py[cod]
+*$py.class
+backend/parking.db
+backend/parking.db-wal
+backend/parking.db-shm
+
+# IDE & OS temporary files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+.agents/
+
+# Logs & cache
+*.log
+.vite/
+frontend/node_modules/.vite/
+frontend/.vite/
