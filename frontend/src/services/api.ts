@@ -158,7 +158,31 @@ export async function callAgentChat(prompt: string, userId: string, lat: number,
 export async function fetchAnalytics(): Promise<AnalyticsOverview> {
   const res = await fetch(`${BASE_URL}/api/analytics/overview`);
   if (!res.ok) throw new Error('Failed to fetch analytics');
-  return res.json();
+  const data = await res.json();
+
+  const hourlyCurve = (data.hourly_demand || data.hourly_curve || []).map((h: any) => ({
+    hour: h.hour_of_day !== undefined ? h.hour_of_day : (h.hour || 0),
+    hour_label: `${h.hour_of_day !== undefined ? h.hour_of_day : (h.hour || 0)}:00`,
+    avg_occupancy_pct: h.avg_occupancy_pct || 0,
+    avg_arrivals: h.avg_arrivals || 0,
+    avg_exits: h.avg_exits || 0,
+  }));
+
+  return {
+    summary: data.summary || {
+      total_lots: 0,
+      total_capacity: 0,
+      total_occupied: 0,
+      total_held: 0,
+      total_free: 0,
+    },
+    overall_utilization_pct: data.summary?.overall_utilization_pct ?? data.overall_utilization_pct ?? 0,
+    entries_today: data.summary?.entries_today ?? data.entries_today ?? 0,
+    exits_today: data.summary?.exits_today ?? data.exits_today ?? 0,
+    estimated_revenue_today: data.summary?.est_revenue_today ?? data.estimated_revenue_today ?? 0,
+    hourly_curve: hourlyCurve,
+    recent_events: data.recent_events || [],
+  };
 }
 
 export async function triggerManualEvent(lotId: string, eventType: 'entry' | 'exit', slotId?: string): Promise<any> {

@@ -341,8 +341,8 @@ export const OperatorDashboardView: React.FC<OperatorDashboardViewProps> = ({
         </div>
 
         {/* Visual Bar Graph */}
-        <div className="h-32 flex items-end justify-between gap-1 pt-4 px-2">
-          {(analytics?.hourly_curve || [
+        <div className="h-40 flex items-end justify-between gap-1.5 pt-6 pb-2 px-2 bg-slate-950/60 rounded-xl border border-slate-800/80">
+          {(analytics?.hourly_curve && analytics.hourly_curve.length > 0 ? analytics.hourly_curve : [
             { hour: 6, avg_occupancy_pct: 25 },
             { hour: 7, avg_occupancy_pct: 35 },
             { hour: 8, avg_occupancy_pct: 60 },
@@ -359,26 +359,32 @@ export const OperatorDashboardView: React.FC<OperatorDashboardViewProps> = ({
             { hour: 19, avg_occupancy_pct: 84 },
             { hour: 20, avg_occupancy_pct: 65 },
             { hour: 21, avg_occupancy_pct: 45 },
-          ]).map((point: any, idx) => (
-            <div key={idx} className="flex-1 flex flex-col items-center group relative">
-              <div
-                className={`w-full rounded-t-sm transition-all duration-300 ${
-                  point.avg_occupancy_pct > 90
-                    ? 'bg-rose-500'
-                    : point.avg_occupancy_pct > 75
-                    ? 'bg-amber-500'
-                    : 'bg-indigo-500'
-                } group-hover:brightness-125`}
-                style={{ height: `${point.avg_occupancy_pct}%` }}
-              ></div>
-              <span className="text-[9px] text-slate-500 mt-1">{point.hour}h</span>
+          ]).map((point: any, idx) => {
+            const pct = Math.max(4, Math.min(100, Math.round(point.avg_occupancy_pct || 0)));
+            return (
+              <div key={idx} className="flex-1 h-full flex flex-col justify-end items-center group relative min-w-[12px]">
+                {/* Bar */}
+                <div
+                  className={`w-full rounded-t-sm transition-all duration-300 shadow-sm ${
+                    pct > 85
+                      ? 'bg-rose-500 shadow-rose-500/30'
+                      : pct > 70
+                      ? 'bg-amber-500 shadow-amber-500/30'
+                      : 'bg-indigo-500 shadow-indigo-500/30'
+                  } group-hover:brightness-125`}
+                  style={{ height: `${pct}%` }}
+                ></div>
+                
+                {/* Hour label */}
+                <span className="text-[9px] font-mono text-slate-400 mt-1.5 select-none">{point.hour}h</span>
 
-              {/* Tooltip on hover */}
-              <div className="absolute -top-7 hidden group-hover:block bg-slate-950 border border-slate-700 text-white text-[10px] px-1.5 py-0.5 rounded shadow z-10 whitespace-nowrap">
-                {point.avg_occupancy_pct}%
+                {/* Tooltip on hover */}
+                <div className="absolute -top-7 hidden group-hover:flex flex-col items-center bg-slate-900 border border-slate-700 text-white text-[10px] font-bold px-2 py-0.5 rounded-lg shadow-xl z-20 pointer-events-none whitespace-nowrap">
+                  <span>{point.hour}:00 · {pct}%</span>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
