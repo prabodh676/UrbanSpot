@@ -1,4 +1,5 @@
 import aiosqlite
+import httpx
 import json
 import math
 import random
@@ -161,11 +162,137 @@ async def init_db():
 
         await db.commit()
 
-        # Seed data if lots table is empty
+        # Seed local fallback lots if lots table is empty
         async with db.execute("SELECT COUNT(*) FROM lots") as cursor:
             count = (await cursor.fetchone())[0]
             if count == 0:
                 await seed_database(db)
+
+        # Automatically sync latest lots from Supabase
+        try:
+            await sync_supabase_lots(db)
+        except Exception as e:
+            print(f"[Supabase Sync] Warning: Could not sync from Supabase: {e}")
+
+async def sync_supabase_lots(db: aiosqlite.Connection) -> int:
+    """Fetch all lots from Supabase parking_spots table and upsert them into SQLite"""
+    sb_url = getattr(settings, "SUPABASE_URL", None)
+    sb_key = getattr(settings, "SUPABASE_KEY", None)
+    if not sb_url or not sb_key:
+        return 0
+
+    url = f"{sb_url.rstrip('/')}/rest/v1/parking_spots?select=*"
+    headers = {
+        "apikey": sb_key,
+        "Authorization": f"Bearer {sb_key}"
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(url, headers=headers)
+            if resp.status_code != 200:
+                print(f"[Supabase Sync] Error {resp.status_code}: {resp.text}")
+                return 0
+            rows = resp.json()
+    except Exception as exc:
+        print(f"[Supabase Sync] Connection error: {exc}")
+        return 0
+
+    synced_count = 0
+    now = time.time()
+    for r in rows:
+        lot_id = str(r["id"])
+        name = r.get("name", "Unknown Lot")
+        lat = float(r.get("latitude", settings.DEFAULT_LAT))
+        lng = float(r.get("longitude", settings.DEFAULT_LNG))
+        address = r.get("address") or ""
+        price_per_hr = float(r.get("price_per_hour", 30.0))
+        total_slots = int(r.get("total_slots", 50))
+        available_slots = int(r.get("available_slots", max(1, int(total_slots * 0.3))))
+
+        # Features
+        features = ["cctv"]
+        if r.get("is_covered"):
+            features.append("covered")
+        if r.get("has_ev"):
+            features.append("ev")
+        if "guard" in str(r.get("security_level", "")).lower():
+            features.append("valet")
+        features.append("disabled")
+
+        operator_id = f"op-sb-{lot_id[:8]}"
+
+        # Upsert lot
+        await db.execute("""
+            INSERT INTO lots (id, name, lat, lng, address, price_per_hr, total_slots, features, operator_id, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                name = excluded.name,
+                lat = excluded.lat,
+                lng = excluded.lng,
+                address = excluded.address,
+                price_per_hr = excluded.price_per_hr,
+                total_slots = excluded.total_slots,
+                features = excluded.features
+        """, (
+            lot_id, name, lat, lng, address, price_per_hr, total_slots,
+            json.dumps(features), operator_id, now
+        ))
+
+        # Check if slots exist for this lot
+        async with db.execute("SELECT COUNT(*) FROM slots WHERE lot_id = ?", (lot_id,)) as cur:
+            slot_count = (await cur.fetchone())[0]
+
+        if slot_count == 0:
+            occupied_count = max(0, total_slots - available_slots)
+            for i in range(1, total_slots + 1):
+                slot_id = f"sb-{lot_id[:8]}-S{i:03d}"
+                label = f"P-{i:02d}"
+                slot_type = "ev" if (r.get("has_ev") and i <= 4) else "standard"
+                status = "occupied" if i <= occupied_count else "free"
+                await db.execute("""
+                    INSERT INTO slots (id, lot_id, label, slot_type, status)
+                    VALUES (?, ?, ?, ?, ?)
+                """, (slot_id, lot_id, label, slot_type, status))
+
+        # Check if lot_stats_hourly exist
+        async with db.execute("SELECT COUNT(*) FROM lot_stats_hourly WHERE lot_id = ?", (lot_id,)) as cur:
+            stat_count = (await cur.fetchone())[0]
+
+        if stat_count == 0:
+            for dow in range(7):
+                for hod in range(24):
+                    is_weekend = dow in (5, 6)
+                    if 9 <= hod <= 11 or 17 <= hod <= 20:
+                        base_ratio = 0.82 if not is_weekend else 0.70
+                        arrivals = 22.0
+                        exits = 15.0
+                    elif 12 <= hod <= 16:
+                        base_ratio = 0.65
+                        arrivals = 16.0
+                        exits = 16.0
+                    elif 0 <= hod <= 6:
+                        base_ratio = 0.15
+                        arrivals = 2.0
+                        exits = 3.0
+                    else:
+                        base_ratio = 0.45
+                        arrivals = 10.0
+                        exits = 9.0
+
+                    await db.execute("""
+                        INSERT OR IGNORE INTO lot_stats_hourly (lot_id, day_of_week, hour_of_day, avg_arrivals, avg_exits, avg_occupancy_ratio, peak_occupancy_ratio)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """, (
+                        lot_id, dow, hod, arrivals, exits,
+                        base_ratio, min(1.0, base_ratio + 0.12)
+                    ))
+
+        synced_count += 1
+
+    await db.commit()
+    print(f"[Supabase Sync] Successfully synced {synced_count} lots from Supabase into local database.")
+    return synced_count
 
 async def seed_database(db: aiosqlite.Connection):
     """Seed 18 realistic lots around Hyderabad (Hitech City, Madhapur, Financial District)"""

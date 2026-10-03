@@ -56,6 +56,14 @@ app.include_router(sim_router)
 async def health_check():
     return {"status": "healthy", "app": settings.APP_NAME, "version": settings.VERSION}
 
+@app.post("/api/sync/supabase")
+async def trigger_supabase_sync():
+    from app.database import get_db_connection, sync_supabase_lots
+    async with await get_db_connection() as db:
+        synced = await sync_supabase_lots(db)
+    await initialize_occupancy_cache()
+    return {"status": "success", "synced_count": synced}
+
 @app.websocket("/api/ws")
 async def websocket_endpoint(websocket: WebSocket):
     """

@@ -137,7 +137,11 @@ export async function fetchRoute(startLat: number, startLng: number, destLat: nu
     `${BASE_URL}/api/route?start_lat=${startLat}&start_lng=${startLng}&dest_lat=${destLat}&dest_lng=${destLng}`
   );
   if (!res.ok) throw new Error('Failed to fetch route');
-  return res.json();
+  const data = await res.json();
+  return {
+    ...data,
+    polyline: data.polyline || data.coordinates || [],
+  };
 }
 
 export async function callAgentChat(prompt: string, userId: string, lat: number, lng: number): Promise<AgentResponse> {
@@ -195,8 +199,7 @@ export async function stopSimulation(): Promise<SimStatus> {
 
 export function createWebSocketConnection(onMessage: (data: any) => void): WebSocket {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const host = window.location.port === '3000' ? `${window.location.hostname}:8000` : window.location.host;
-  const wsUrl = `${protocol}//${host}/api/ws`;
+  const wsUrl = `${protocol}//${window.location.host}/api/ws`;
 
   const ws = new WebSocket(wsUrl);
   ws.onopen = () => {

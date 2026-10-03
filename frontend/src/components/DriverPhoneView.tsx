@@ -26,7 +26,7 @@ interface DriverPhoneViewProps {
   selectedLot: ParkingLot | null;
   onSelectLot: (lot: ParkingLot) => void;
   onOpenAgent: () => void;
-  onOpenOutbox: () => void;
+  onOpenOutbox?: () => void;
   activeRoute: RouteInfo | null;
   onNavigateToLot: (lot: ParkingLot) => void;
   persona: UserPersona;
@@ -41,7 +41,6 @@ export const DriverPhoneView: React.FC<DriverPhoneViewProps> = ({
   selectedLot,
   onSelectLot,
   onOpenAgent,
-  onOpenOutbox,
   activeRoute,
   onNavigateToLot,
   persona,
@@ -255,53 +254,31 @@ export const DriverPhoneView: React.FC<DriverPhoneViewProps> = ({
   };
 
   return (
-    <div className="relative w-full max-w-[420px] h-[780px] bg-slate-950 rounded-[40px] shadow-2xl border-4 border-slate-800 flex flex-col overflow-hidden text-slate-100 select-none">
-      {/* Phone Speaker Notch */}
-      <div className="absolute top-2 left-1/2 -translate-x-1/2 w-32 h-4 bg-slate-900 rounded-full z-30 flex items-center justify-center">
-        <div className="w-12 h-1 bg-slate-800 rounded-full"></div>
-        <div className="w-2.5 h-2.5 bg-slate-800 rounded-full ml-3"></div>
-      </div>
-
-      {/* Status Bar */}
-      <div className="pt-6 px-6 pb-2 flex items-center justify-between text-xs text-slate-400 z-20">
-        <span>09:41</span>
-        <div className="flex items-center space-x-2">
-          {networkState !== 'online' && (
-            <span className="flex items-center text-rose-400 text-[10px] font-bold bg-rose-950/60 px-1.5 py-0.5 rounded border border-rose-800">
-              <WifiOff className="w-3 h-3 mr-1" />
-              {networkState.toUpperCase()}
-            </span>
-          )}
-          {outboxCount > 0 && (
-            <button
-              onClick={onOpenOutbox}
-              className="px-1.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded text-[10px] font-semibold flex items-center space-x-1 hover:bg-amber-500/30"
-            >
-              <span>Outbox ({outboxCount})</span>
-            </button>
-          )}
-          <span>5G</span>
-          <span>100%</span>
-        </div>
-      </div>
-
-      {/* Header & Persona Switcher */}
-      <div className="px-5 py-2.5 bg-slate-900/60 border-b border-slate-800 flex items-center justify-between z-20">
-        <div className="flex items-center space-x-2.5">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center font-bold text-sm shadow">
-            {persona.avatar}
+    <div className="relative w-full h-full bg-slate-950 flex flex-col overflow-hidden text-slate-100 select-none">
+      {/* Header & Persona Profile Bar */}
+      <div className="px-4 py-3 bg-slate-900/70 border-b border-slate-800 flex items-center justify-between shrink-0 z-20">
+        <div className="flex items-center space-x-3">
+          <div className="relative">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 flex items-center justify-center font-black text-sm text-white shadow-md shadow-indigo-600/30">
+              {persona.avatar}
+            </div>
+            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-slate-950"></div>
           </div>
           <div>
             <div className="flex items-center space-x-1.5">
-              <span className="font-bold text-xs text-white leading-none">{persona.name}</span>
-              <span className="text-[10px] px-1.5 py-0.2 bg-indigo-950 text-indigo-300 rounded border border-indigo-800">
+              <span className="font-extrabold text-xs text-white leading-tight">{persona.name}</span>
+              <span className="text-[10px] px-1.5 py-0.2 bg-indigo-950/90 text-indigo-300 rounded border border-indigo-800 font-semibold uppercase tracking-wider">
                 {persona.role}
               </span>
             </div>
             <div className="text-[10px] text-slate-400 flex items-center space-x-2 mt-0.5">
-              <span>Trust: <strong className="text-emerald-400">{persona.trustScore}%</strong></span>
+              <span className="flex items-center text-emerald-400 font-medium">
+                <ShieldCheck className="w-3 h-3 mr-0.5" /> {persona.trustScore}% Trust
+              </span>
               <span>•</span>
-              <span className="text-amber-300">★ {persona.points} pts</span>
+              <span className="text-amber-300 font-medium flex items-center">
+                ★ {persona.points} pts
+              </span>
             </div>
           </div>
         </div>
@@ -329,216 +306,278 @@ export const DriverPhoneView: React.FC<DriverPhoneViewProps> = ({
               });
             }
           }}
-          className="text-[11px] px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 transition"
+          className="text-[11px] px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl border border-slate-700 transition active:scale-95 flex items-center space-x-1 cursor-pointer"
+          title="Switch User Persona Profile"
         >
-          Switch
+          <span>Switch Profile</span>
         </button>
       </div>
 
-      {/* AI Assistant Search Bar */}
-      <div className="p-4 bg-slate-950 z-20">
+      {/* Search & Quick Filter Bar */}
+      <div className="p-3.5 bg-slate-950 border-b border-slate-800/80 shrink-0 z-20 space-y-2.5">
         <div className="relative flex items-center">
-          <Search className="absolute left-3.5 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
           <input
             type="text"
-            placeholder="Search destination or lot..."
+            placeholder="Search Secunderabad, Hitech City, Old City..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-slate-900 border border-slate-800 rounded-2xl pl-10 pr-24 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full bg-slate-900/90 border border-slate-800 rounded-xl pl-10 pr-24 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition"
           />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-20 p-1 text-slate-400 hover:text-white"
+              title="Clear search"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
           {/* Agentic AI Trigger Button */}
           <button
             onClick={onOpenAgent}
-            className="absolute right-1.5 px-2.5 py-1.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl text-[11px] font-semibold flex items-center space-x-1 shadow-md shadow-indigo-500/20 active:scale-95 transition"
+            className="absolute right-1.5 px-2.5 py-1.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-lg text-[11px] font-bold flex items-center space-x-1 shadow-md shadow-indigo-600/30 active:scale-95 transition cursor-pointer"
+            title="Ask AI Copilot for best spots"
           >
-            <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-spin" style={{ animationDuration: '4s' }} />
-            <span>AI Agent</span>
+            <Sparkles className="w-3 h-3 text-amber-300" />
+            <span>AI Ask</span>
           </button>
         </div>
 
         {/* Quick Filter Chips */}
-        <div className="flex items-center space-x-1.5 mt-2.5 overflow-x-auto no-scrollbar pb-1 text-[11px]">
+        <div className="flex items-center space-x-1.5 overflow-x-auto no-scrollbar pb-0.5 text-[11px]">
+          <button
+            onClick={() => setSelectedFeature(selectedFeature === 'ev' ? null : 'ev')}
+            className={`px-2.5 py-1 rounded-lg whitespace-nowrap transition-all font-semibold flex items-center space-x-1 border cursor-pointer ${
+              selectedFeature === 'ev'
+                ? 'bg-indigo-600 text-white border-indigo-500 shadow-sm'
+                : 'bg-slate-900/80 border-slate-800 text-slate-300 hover:bg-slate-800'
+            }`}
+          >
+            <Zap className="w-3 h-3 text-amber-400" />
+            <span>EV Fast Charge</span>
+          </button>
           <button
             onClick={() => setSelectedFeature(selectedFeature === 'covered' ? null : 'covered')}
-            className={`px-2.5 py-1 rounded-full whitespace-nowrap transition flex items-center space-x-1 ${
+            className={`px-2.5 py-1 rounded-lg whitespace-nowrap transition-all font-semibold border cursor-pointer ${
               selectedFeature === 'covered'
-                ? 'bg-indigo-600 text-white'
-                : 'bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800'
+                ? 'bg-indigo-600 text-white border-indigo-500 shadow-sm'
+                : 'bg-slate-900/80 border-slate-800 text-slate-300 hover:bg-slate-800'
             }`}
           >
             <span>Covered</span>
           </button>
           <button
-            onClick={() => setSelectedFeature(selectedFeature === 'ev' ? null : 'ev')}
-            className={`px-2.5 py-1 rounded-full whitespace-nowrap transition flex items-center space-x-1 ${
-              selectedFeature === 'ev'
-                ? 'bg-indigo-600 text-white'
-                : 'bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800'
-            }`}
-          >
-            <Zap className="w-3 h-3 text-amber-400" />
-            <span>EV Charging</span>
-          </button>
-          <button
             onClick={() => setMaxPrice(maxPrice === 35 ? null : 35)}
-            className={`px-2.5 py-1 rounded-full whitespace-nowrap transition ${
+            className={`px-2.5 py-1 rounded-lg whitespace-nowrap transition-all font-semibold border cursor-pointer ${
               maxPrice === 35
-                ? 'bg-indigo-600 text-white'
-                : 'bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800'
+                ? 'bg-indigo-600 text-white border-indigo-500 shadow-sm'
+                : 'bg-slate-900/80 border-slate-800 text-slate-300 hover:bg-slate-800'
             }`}
           >
             <span>Under ₹35/h</span>
           </button>
           <button
             onClick={() => setSelectedFeature(selectedFeature === 'disabled' ? null : 'disabled')}
-            className={`px-2.5 py-1 rounded-full whitespace-nowrap transition ${
+            className={`px-2.5 py-1 rounded-lg whitespace-nowrap transition-all font-semibold border cursor-pointer ${
               selectedFeature === 'disabled'
-                ? 'bg-indigo-600 text-white'
-                : 'bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800'
+                ? 'bg-indigo-600 text-white border-indigo-500 shadow-sm'
+                : 'bg-slate-900/80 border-slate-800 text-slate-300 hover:bg-slate-800'
             }`}
           >
             <span>Accessible</span>
           </button>
+          {(selectedFeature || maxPrice || searchQuery) && (
+            <button
+              onClick={() => {
+                setSelectedFeature(null);
+                setMaxPrice(null);
+                setSearchQuery('');
+              }}
+              className="text-[10px] text-rose-400 hover:text-rose-300 px-2 py-1 font-bold whitespace-nowrap cursor-pointer"
+            >
+              Reset
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Tabs Switcher */}
-      <div className="flex border-b border-slate-800 bg-slate-900/40 text-xs font-semibold px-4">
+      {/* Tabs Segmented Switcher */}
+      <div className="flex border-b border-slate-800 bg-slate-900/50 p-1.5 gap-1 text-xs font-semibold shrink-0">
         <button
           onClick={() => setActiveTab('lots')}
-          className={`flex-1 py-2.5 text-center border-b-2 transition ${
+          className={`flex-1 py-2 text-center rounded-xl transition-all font-bold flex items-center justify-center space-x-1.5 cursor-pointer ${
             activeTab === 'lots'
-              ? 'border-indigo-500 text-indigo-400'
-              : 'border-transparent text-slate-400 hover:text-slate-200'
+              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/25'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
           }`}
         >
-          Lots ({filteredLots.length})
+          <span>Lots</span>
+          <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+            activeTab === 'lots' ? 'bg-indigo-800 text-indigo-200' : 'bg-slate-800 text-slate-400'
+          }`}>
+            {filteredLots.length}
+          </span>
         </button>
         <button
           onClick={() => setActiveTab('street')}
-          className={`flex-1 py-2.5 text-center border-b-2 transition flex items-center justify-center space-x-1 ${
+          className={`flex-1 py-2 text-center rounded-xl transition-all font-bold flex items-center justify-center space-x-1.5 cursor-pointer ${
             activeTab === 'street'
-              ? 'border-cyan-400 text-cyan-300'
-              : 'border-transparent text-slate-400 hover:text-slate-200'
+              ? 'bg-cyan-600 text-white shadow-md shadow-cyan-600/25'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
           }`}
         >
           <span>Spotter</span>
-          <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+          <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
         </button>
         <button
           onClick={() => setActiveTab('passes')}
-          className={`flex-1 py-2.5 text-center border-b-2 transition ${
+          className={`flex-1 py-2 text-center rounded-xl transition-all font-bold flex items-center justify-center space-x-1.5 cursor-pointer ${
             activeTab === 'passes'
-              ? 'border-indigo-500 text-indigo-400'
-              : 'border-transparent text-slate-400 hover:text-slate-200'
+              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/25'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
           }`}
         >
-          My Pass {activeReservation ? '•' : ''}
+          <span>My Pass</span>
+          {activeReservation && (
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+          )}
         </button>
       </div>
 
       {/* Scrollable Content Body */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3">
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-3 sm:p-4 pb-28 lg:pb-6 space-y-3">
         {/* Tab 1: Lots Listing */}
         {activeTab === 'lots' && (
           <>
             {filteredLots.map(lot => {
               const isSelected = selectedLot?.id === lot.id;
+              const isFull = lot.free_slots === 0;
               const colorDot =
                 lot.status_color === 'green'
-                  ? 'bg-emerald-500'
+                  ? 'bg-emerald-500 shadow-emerald-500/50'
                   : lot.status_color === 'amber'
-                  ? 'bg-amber-500'
-                  : 'bg-rose-500';
+                  ? 'bg-amber-500 shadow-amber-500/50'
+                  : 'bg-rose-500 shadow-rose-500/50';
 
               return (
                 <div
                   key={lot.id}
                   onClick={() => onSelectLot(lot)}
-                  className={`p-3.5 rounded-2xl cursor-pointer transition border text-left ${
+                  className={`p-3.5 sm:p-4 rounded-2xl cursor-pointer transition-all duration-200 border text-left ${
                     isSelected
-                      ? 'bg-slate-900 border-indigo-500/80 ring-1 ring-indigo-500/50 shadow-lg'
-                      : 'bg-slate-900/60 border-slate-800/80 hover:bg-slate-900 hover:border-slate-700'
+                      ? 'bg-slate-900/95 border-indigo-500/90 ring-1 ring-indigo-500/50 shadow-xl shadow-indigo-950/40'
+                      : 'bg-slate-900/60 border-slate-800/80 hover:bg-slate-900 hover:border-slate-700/90 hover:shadow-md'
                   }`}
                 >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h4 className="font-bold text-xs text-white flex items-center space-x-1.5">
-                        <span className={`w-2.5 h-2.5 rounded-full ${colorDot}`}></span>
-                        <span>{lot.name}</span>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-extrabold text-xs sm:text-sm text-white flex items-center space-x-2 truncate">
+                        <span className={`w-2.5 h-2.5 rounded-full shrink-0 shadow-sm ${colorDot}`}></span>
+                        <span className="truncate">{lot.name}</span>
                       </h4>
-                      <p className="text-[10px] text-slate-400 mt-0.5 line-clamp-1">{lot.address}</p>
+                      <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-1 flex items-center space-x-1">
+                        <span>{lot.address}</span>
+                      </p>
                     </div>
-                    <div className="text-right">
-                      <span className="text-sm font-extrabold text-indigo-400">₹{lot.price_per_hr}</span>
-                      <span className="text-[10px] text-slate-400">/hr</span>
+                    <div className="text-right shrink-0">
+                      <div className="inline-flex items-baseline px-2 py-0.5 bg-indigo-950/60 border border-indigo-800/60 rounded-lg">
+                        <span className="text-xs sm:text-sm font-black text-indigo-300">₹{lot.price_per_hr}</span>
+                        <span className="text-[10px] text-indigo-400/80 ml-0.5">/hr</span>
+                      </div>
                     </div>
                   </div>
 
                   {/* Occupancy progress bar */}
-                  <div className="mt-2.5">
-                    <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1">
-                      <span>Live Availability</span>
-                      <span className="font-semibold text-slate-200">
-                        {lot.free_slots} of {lot.total_slots} free ({lot.occupancy_pct}% full)
+                  <div className="mt-3">
+                    <div className="flex items-center justify-between text-[11px] text-slate-400 mb-1">
+                      <span className="flex items-center space-x-1">
+                        <span className={`font-bold ${lot.free_slots > 10 ? 'text-emerald-400' : lot.free_slots > 0 ? 'text-amber-400' : 'text-rose-400'}`}>
+                          {lot.free_slots} free
+                        </span>
+                        <span>/ {lot.total_slots} slots</span>
+                      </span>
+                      <span className="font-medium text-slate-300">
+                        {lot.occupancy_pct}% occupied
                       </span>
                     </div>
-                    <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                    <div className="w-full h-2 bg-slate-800/90 rounded-full overflow-hidden p-0.5">
                       <div
-                        className={`h-full transition-all duration-500 ${
+                        className={`h-full rounded-full transition-all duration-500 ${
                           lot.status_color === 'green'
-                            ? 'bg-emerald-500'
+                            ? 'bg-gradient-to-r from-emerald-500 to-teal-400'
                             : lot.status_color === 'amber'
-                            ? 'bg-amber-500'
-                            : 'bg-rose-500'
+                            ? 'bg-gradient-to-r from-amber-500 to-yellow-400'
+                            : 'bg-gradient-to-r from-rose-500 to-red-600'
                         }`}
                         style={{ width: `${lot.occupancy_pct}%` }}
                       ></div>
                     </div>
                   </div>
 
-                  {/* Amenities and Actions */}
-                  <div className="mt-2.5 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[10px]">
-                    <div className="flex items-center space-x-1 text-slate-400">
-                      {lot.features.map(f => (
-                        <span key={f} className="px-1.5 py-0.5 bg-slate-800/80 rounded text-[9px] capitalize">
+                  {/* Amenities and Action Buttons */}
+                  <div className="mt-3 pt-2.5 border-t border-slate-800/70 flex items-center justify-between gap-2">
+                    <div className="flex items-center space-x-1 text-slate-400 flex-wrap gap-y-1">
+                      {lot.features.slice(0, 3).map(f => (
+                        <span key={f} className="px-1.5 py-0.5 bg-slate-800/90 border border-slate-700/60 rounded-md text-[9px] font-medium capitalize text-slate-300">
                           {f}
                         </span>
                       ))}
                     </div>
 
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2 shrink-0">
+                      {/* Navigate Button */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           onNavigateToLot(lot);
                         }}
-                        className="p-1.5 bg-slate-800 hover:bg-slate-700 text-sky-400 rounded-lg transition"
-                        title="Route Navigation"
+                        className="px-3 py-1.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-bold rounded-xl text-[11px] transition shadow-md shadow-sky-600/30 flex items-center space-x-1.5 active:scale-95 cursor-pointer"
+                        title="Navigate to lot"
                       >
-                        <Navigation className="w-3.5 h-3.5" />
+                        <Navigation className="w-3.5 h-3.5 text-sky-200 fill-sky-200/30" />
+                        <span>Navigate</span>
                       </button>
+
+                      {/* Hold / Reserve Button */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handleHoldSlot(lot);
                         }}
-                        disabled={lot.free_slots === 0 || isHolding}
-                        className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-semibold rounded-lg text-[10px] transition shadow"
+                        disabled={isFull || isHolding}
+                        className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-indigo-500/50 disabled:bg-slate-900 disabled:border-slate-800 disabled:text-slate-600 text-slate-100 font-semibold rounded-xl text-[11px] transition shadow-sm active:scale-95 cursor-pointer disabled:cursor-not-allowed flex items-center space-x-1"
                       >
-                        {lot.free_slots === 0 ? 'Full' : 'Hold 10m'}
+                        <Clock className="w-3 h-3 text-slate-400" />
+                        <span>{isFull ? 'Full' : 'Hold 10m'}</span>
                       </button>
                     </div>
                   </div>
 
                   {/* Live Forecast Pill if selected */}
                   {isSelected && selectedLotForecast && (
-                    <div className="mt-2 p-2 bg-indigo-950/40 rounded-xl border border-indigo-900/60 text-[10px] text-indigo-200 flex items-start space-x-2">
+                    <div className="mt-2.5 p-2.5 bg-indigo-950/50 rounded-xl border border-indigo-900/60 text-[11px] text-indigo-200 flex items-start space-x-2">
                       <Clock className="w-3.5 h-3.5 text-indigo-400 shrink-0 mt-0.5" />
                       <div>
-                        <span className="font-semibold text-white">AI Surge Forecast:</span>{' '}
+                        <span className="font-bold text-white">AI Surge Forecast:</span>{' '}
                         <span>{selectedLotForecast.explanation}</span>
                       </div>
+                    </div>
+                  )}
+
+                  {/* Prominent Navigation Launch button when selected */}
+                  {isSelected && (
+                    <div className="mt-2.5 pt-2.5 border-t border-slate-800/80">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onNavigateToLot(lot);
+                        }}
+                        className="w-full py-2.5 bg-gradient-to-r from-sky-500 via-indigo-600 to-violet-600 hover:from-sky-400 hover:to-indigo-500 text-white font-extrabold rounded-xl text-xs transition flex items-center justify-center space-x-2 shadow-lg shadow-sky-600/30 active:scale-95 cursor-pointer"
+                      >
+                        <Navigation className="w-4 h-4 text-sky-200 fill-sky-200/30" />
+                        <span>Start Turn-by-Turn Navigation (Google Maps)</span>
+                      </button>
                     </div>
                   )}
                 </div>
@@ -551,68 +590,97 @@ export const DriverPhoneView: React.FC<DriverPhoneViewProps> = ({
         {activeTab === 'street' && (
           <div className="space-y-3">
             {/* Vacating Broadcast Callout */}
-            <div className="p-3.5 bg-gradient-to-br from-cyan-950/60 to-slate-900 border border-cyan-800/60 rounded-2xl">
+            <div className="p-4 bg-gradient-to-br from-cyan-950/70 via-slate-900 to-slate-900 border border-cyan-800/60 rounded-2xl shadow-lg">
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="font-bold text-xs text-cyan-300 flex items-center space-x-1.5">
+                  <h4 className="font-extrabold text-xs sm:text-sm text-cyan-300 flex items-center space-x-2">
                     <Radio className="w-4 h-4 text-cyan-400 animate-pulse" />
                     <span>Spot Spotter Network</span>
                   </h4>
-                  <p className="text-[10px] text-slate-300 mt-0.5">
-                    Leaving a street spot? Broadcast to drivers & earn <strong>+15 Trust Points</strong>!
+                  <p className="text-[11px] text-slate-300 mt-1">
+                    Leaving a street spot? Broadcast to nearby seekers & instantly earn <strong className="text-amber-300">+15 Trust Points</strong>!
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setShowVacatingModal(true)}
-                className="mt-3 w-full py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded-xl text-xs transition shadow-lg shadow-cyan-500/20 active:scale-95"
+                className="mt-3.5 w-full py-2.5 bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 text-slate-950 font-black rounded-xl text-xs transition shadow-lg shadow-cyan-500/25 active:scale-95 cursor-pointer flex items-center justify-center space-x-1.5"
               >
-                Broadcast Vacating Spot 🚗💨
+                <span>Broadcast Vacating Spot</span>
+                <span>🚗💨</span>
               </button>
             </div>
 
             {/* Active Street Spots Feed */}
             <div className="space-y-2">
-              <div className="flex items-center justify-between text-[11px] text-slate-400 px-1">
+              <div className="flex items-center justify-between text-[11px] text-slate-400 px-1 font-semibold">
                 <span>Active Street Spots nearby</span>
                 <span className="text-cyan-400 font-bold">{streetSpots.length} Open</span>
               </div>
 
               {streetSpots.length === 0 ? (
-                <div className="p-6 text-center text-slate-500 text-xs">
-                  No active street spot broadcasts right now. Tap "Broadcast Vacating" above to simulate!
+                <div className="p-8 text-center text-slate-500 text-xs bg-slate-900/40 border border-dashed border-slate-800 rounded-2xl">
+                  <p className="font-medium text-slate-400">No active street spot broadcasts right now.</p>
+                  <p className="text-[10px] text-slate-500 mt-1">Tap "Broadcast Vacating Spot" above to simulate an open curb!</p>
                 </div>
               ) : (
                 streetSpots.map(spot => (
                   <div
                     key={spot.id}
-                    className="p-3 bg-slate-900 border border-slate-800 rounded-2xl flex items-center justify-between"
+                    className="p-3.5 bg-slate-900/80 border border-slate-800 rounded-2xl flex items-center justify-between gap-2 hover:border-slate-700 transition"
                   >
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <div className="flex items-center space-x-2">
-                        <span className="font-bold text-xs text-white">{spot.street_name}</span>
-                        <span className="text-[9px] px-1.5 py-0.2 bg-cyan-950 text-cyan-300 rounded border border-cyan-800">
+                        <span className="font-bold text-xs text-white truncate">{spot.street_name}</span>
+                        <span className="text-[9px] px-1.5 py-0.2 bg-cyan-950 text-cyan-300 rounded border border-cyan-800 font-mono font-semibold shrink-0">
                           TTL {spot.ttl_remaining}s
                         </span>
                       </div>
-                      <div className="text-[10px] text-slate-400 mt-0.5 flex items-center space-x-2">
+                      <div className="text-[10px] text-slate-400 mt-1 flex items-center space-x-2">
                         <span>GPS ±{spot.accuracy_m}m</span>
                         <span>•</span>
-                        <span className="text-emerald-400 font-semibold">Free spot</span>
+                        <span className="text-emerald-400 font-bold">Free Spot</span>
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => handleClaimStreetSpot(spot)}
-                      disabled={spot.status === 'claimed'}
-                      className={`px-3 py-1.5 rounded-xl font-bold text-[10px] transition shadow ${
-                        spot.status === 'claimed'
-                          ? 'bg-slate-800 text-slate-500'
-                          : 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 active:scale-95'
-                      }`}
-                    >
-                      {spot.status === 'claimed' ? 'Claimed' : 'Claim Now'}
-                    </button>
+                    <div className="flex items-center space-x-1.5 shrink-0">
+                      <button
+                        onClick={() => {
+                          onNavigateToLot({
+                            id: spot.id,
+                            name: spot.street_name,
+                            lat: spot.lat,
+                            lng: spot.lng,
+                            address: 'Street Parking Spot',
+                            total_slots: 1,
+                            occupied_slots: 0,
+                            free_slots: 1,
+                            held_slots: 0,
+                            occupancy_ratio: 0,
+                            occupancy_pct: 0,
+                            price_per_hr: 0,
+                            features: ['street'],
+                            status_color: 'green',
+                            operator_id: 'street_spotter',
+                          });
+                        }}
+                        className="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-sky-400 rounded-xl transition cursor-pointer active:scale-95 shadow-sm"
+                        title="Navigate in Google Maps"
+                      >
+                        <Navigation className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleClaimStreetSpot(spot)}
+                        disabled={spot.status === 'claimed'}
+                        className={`px-3 py-2 rounded-xl font-bold text-[11px] transition shadow active:scale-95 cursor-pointer ${
+                          spot.status === 'claimed'
+                            ? 'bg-slate-800/80 border border-slate-700 text-slate-500 cursor-not-allowed'
+                            : 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black shadow-cyan-500/20'
+                        }`}
+                      >
+                        {spot.status === 'claimed' ? 'Claimed' : 'Claim Spot'}
+                      </button>
+                    </div>
                   </div>
                 ))
               )}
@@ -624,17 +692,19 @@ export const DriverPhoneView: React.FC<DriverPhoneViewProps> = ({
         {activeTab === 'passes' && (
           <div className="space-y-3">
             {!activeReservation ? (
-              <div className="p-8 text-center text-slate-400 text-xs">
-                <Car className="w-10 h-10 mx-auto text-slate-600 mb-2" />
-                <p>No active reservations.</p>
-                <p className="text-[10px] text-slate-500 mt-1">Select any lot from the list to hold a slot.</p>
+              <div className="p-10 text-center text-slate-400 text-xs bg-slate-900/30 border border-dashed border-slate-800 rounded-3xl">
+                <Car className="w-12 h-12 mx-auto text-slate-600 mb-3" />
+                <p className="font-bold text-sm text-slate-300">No active reservations</p>
+                <p className="text-[11px] text-slate-500 mt-1 max-w-xs mx-auto">
+                  Select any lot from the list and tap "Hold 10m" to lock in your parking slot with an offline-ready QR pass.
+                </p>
               </div>
             ) : (
-              <div className="p-4 bg-slate-900 border border-slate-800 rounded-3xl space-y-4">
+              <div className="p-4 sm:p-5 bg-slate-900/90 border border-slate-800 rounded-3xl space-y-4 shadow-xl">
                 {/* Hold status badge */}
                 <div className="flex items-center justify-between">
                   <span
-                    className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                    className={`px-3 py-1 rounded-full text-[11px] font-black tracking-wider uppercase ${
                       activeReservation.status === 'held'
                         ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse'
                         : activeReservation.status === 'confirmed'
@@ -642,14 +712,14 @@ export const DriverPhoneView: React.FC<DriverPhoneViewProps> = ({
                         : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
                     }`}
                   >
-                    {activeReservation.status.toUpperCase()}
+                    {activeReservation.status}
                   </span>
 
                   {activeReservation.status === 'held' && (
-                    <div className="text-xs font-bold text-amber-300 flex items-center space-x-1">
+                    <div className="text-xs font-black text-amber-300 flex items-center space-x-1.5 bg-amber-950/60 px-2.5 py-1 rounded-full border border-amber-800/80">
                       <Clock className="w-3.5 h-3.5" />
                       <span>
-                        {Math.floor(holdTimerSeconds / 60)}:
+                        Expires in {Math.floor(holdTimerSeconds / 60)}:
                         {(holdTimerSeconds % 60).toString().padStart(2, '0')}
                       </span>
                     </div>
@@ -657,34 +727,45 @@ export const DriverPhoneView: React.FC<DriverPhoneViewProps> = ({
                 </div>
 
                 <div>
-                  <h3 className="font-extrabold text-sm text-white">{activeReservation.lot_name || 'Reserved Facility'}</h3>
-                  <p className="text-[10px] text-slate-400 mt-0.5">Assigned Slot: <strong className="text-white">{activeReservation.slot_id}</strong></p>
+                  <h3 className="font-black text-base text-white">{activeReservation.lot_name || 'Reserved Facility'}</h3>
+                  <p className="text-xs text-slate-400 mt-0.5">Assigned Bay: <strong className="text-indigo-300">{activeReservation.slot_id}</strong></p>
                 </div>
 
-                {/* QR Code Pass Box (Rendered SVG for offline scanning) */}
+                {/* QR Code Pass Box */}
                 <div className="p-4 bg-white rounded-2xl flex flex-col items-center justify-center text-slate-950 shadow-inner">
-                  <div className="w-32 h-32 bg-slate-100 border-2 border-dashed border-slate-300 rounded-xl flex flex-col items-center justify-center p-2">
-                    <QrCode className="w-24 h-24 text-slate-900" />
+                  <div className="w-36 h-36 bg-slate-100 border-2 border-dashed border-slate-300 rounded-xl flex flex-col items-center justify-center p-2">
+                    <QrCode className="w-28 h-28 text-slate-900" />
                   </div>
-                  <span className="mt-2 font-mono font-bold text-sm tracking-wider">PIN: {activeReservation.pin_code}</span>
-                  <span className="text-[9px] text-slate-500">Authorized for Offline Gate Entry</span>
+                  <span className="mt-2.5 font-mono font-black text-base tracking-widest text-slate-900">PIN: {activeReservation.pin_code}</span>
+                  <span className="text-[10px] font-medium text-slate-600">Zero-Key Gate Token · Offline Verified</span>
                 </div>
 
                 {/* Action buttons */}
                 <div className="space-y-2 pt-1">
+                  <button
+                    onClick={() => {
+                      const lot = lots.find((l) => l.id === activeReservation.lot_id);
+                      if (lot) onNavigateToLot(lot);
+                    }}
+                    className="w-full py-2.5 bg-gradient-to-r from-sky-500 via-indigo-600 to-violet-600 hover:from-sky-400 hover:to-indigo-500 text-white font-extrabold rounded-xl text-xs transition shadow-lg shadow-sky-600/30 active:scale-95 flex items-center justify-center space-x-2 cursor-pointer"
+                  >
+                    <Navigation className="w-4 h-4 text-sky-200 fill-sky-200/30" />
+                    <span>Navigate to Lot (Google Maps)</span>
+                  </button>
+
                   {activeReservation.status === 'held' && (
                     <button
                       onClick={handleConfirmReservation}
-                      className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition shadow-lg shadow-emerald-600/30 active:scale-95 flex items-center justify-center space-x-1.5"
+                      className="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black rounded-xl text-xs transition shadow-lg shadow-emerald-600/30 active:scale-95 flex items-center justify-center space-x-2 cursor-pointer"
                     >
                       <CheckCircle2 className="w-4 h-4" />
-                      <span>Confirm Booking (Prepay)</span>
+                      <span>Confirm & Prepay Booking</span>
                     </button>
                   )}
 
                   <button
                     onClick={handleCancelReservation}
-                    className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl text-xs transition border border-slate-700"
+                    className="w-full py-2 bg-slate-800/90 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl text-xs transition border border-slate-700 cursor-pointer"
                   >
                     Release Slot Hold
                   </button>
@@ -733,9 +814,9 @@ export const DriverPhoneView: React.FC<DriverPhoneViewProps> = ({
             <button
               onClick={handleBroadcastVacating}
               disabled={isReporting}
-              className="w-full py-2.5 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded-xl text-xs transition shadow-lg shadow-cyan-500/20 active:scale-95"
+              className="w-full py-2.5 bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 text-slate-950 font-black rounded-xl text-xs transition shadow-lg shadow-cyan-500/25 active:scale-95 cursor-pointer disabled:opacity-50"
             >
-              {isReporting ? 'Broadcasting...' : 'Broadcast to Nearby Drivers (+15 pts)'}
+              {isReporting ? 'Broadcasting Spot...' : 'Broadcast to Nearby Drivers (+15 pts)'}
             </button>
           </div>
         </div>

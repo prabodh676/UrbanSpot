@@ -9,7 +9,7 @@ BACKEND_DIR="$ROOT_DIR/backend"
 FRONTEND_DIR="$ROOT_DIR/frontend"
 
 echo "=========================================================="
-echo "   🚀 Starting SmartPark Platform (Hyderabad Demo)       "
+echo "   🚀 Starting UrbanSpot Platform (Hyderabad Demo)       "
 echo "=========================================================="
 
 # 1. Start Python FastAPI Backend
@@ -21,7 +21,7 @@ BACKEND_PID=$!
 # Trap signals to cleanup background processes on exit
 cleanup() {
   echo ""
-  echo "Shutting down SmartPark services..."
+  echo "Shutting down UrbanSpot services..."
   kill $BACKEND_PID 2>/dev/null || true
   kill $FRONTEND_PID 2>/dev/null || true
   exit 0
@@ -39,7 +39,7 @@ FRONTEND_PID=$!
 
 echo ""
 echo "=========================================================="
-echo " ✅ SmartPark is Live!"
+echo " ✅ UrbanSpot is Live!"
 echo " 🌐 Frontend UI:  http://localhost:3000"
 echo " 🔌 Backend API:  http://localhost:8000"
 echo " 📖 API Docs:     http://localhost:8000/docs"

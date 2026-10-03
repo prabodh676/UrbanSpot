@@ -65,7 +65,7 @@ export const OperatorDashboardView: React.FC<OperatorDashboardViewProps> = ({
           <div className="flex items-center space-x-2">
             <h2 className="text-xl font-black tracking-tight text-white flex items-center space-x-2">
               <Building2 className="w-6 h-6 text-indigo-400" />
-              <span>SmartPark Operator Hub</span>
+              <span>UrbanSpot Operator Hub</span>
             </h2>
             <span className="px-2 py-0.5 bg-emerald-950 text-emerald-400 border border-emerald-800 rounded-full text-[10px] font-bold">
               LIVE TELEMETRY

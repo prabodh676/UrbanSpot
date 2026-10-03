@@ -1,13 +1,13 @@
 import { OutboxItem, ParkingLot, Reservation } from '../types';
 import * as api from './api';
 
-const OUTBOX_KEY = 'smartpark_outbox';
-const CACHED_LOTS_KEY = 'smartpark_cached_lots';
-const CACHED_RESERVATIONS_KEY = 'smartpark_cached_reservations';
-const NETWORK_STATE_KEY = 'smartpark_network_state'; // 'online' | 'offline' | 'flaky'
+const OUTBOX_KEY = 'urbanspot_outbox';
+const CACHED_LOTS_KEY = 'urbanspot_cached_lots';
+const CACHED_RESERVATIONS_KEY = 'urbanspot_cached_reservations';
+const NETWORK_STATE_KEY = 'urbanspot_network_state'; // 'online' | 'offline' | 'flaky'
 
 export function getNetworkState(): 'online' | 'offline' | 'flaky' {
-  return (localStorage.getItem(NETWORK_STATE_KEY) as any) || 'online';
+  return (localStorage.getItem(NETWORK_STATE_KEY) as any) || (localStorage.getItem('smartpark_network_state') as any) || 'online';
 }
 
 export function setNetworkState(state: 'online' | 'offline' | 'flaky') {
@@ -17,7 +17,7 @@ export function setNetworkState(state: 'online' | 'offline' | 'flaky') {
 
 export function getOutbox(): OutboxItem[] {
   try {
-    const raw = localStorage.getItem(OUTBOX_KEY);
+    const raw = localStorage.getItem(OUTBOX_KEY) || localStorage.getItem('smartpark_outbox');
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];

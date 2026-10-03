@@ -12,7 +12,7 @@ router = APIRouter(prefix="/api/lots", tags=["lots"])
 async def get_lots(
     lat: float = Query(settings.DEFAULT_LAT),
     lng: float = Query(settings.DEFAULT_LNG),
-    radius: float = Query(10000.0),
+    radius: float = Query(50000.0),
     max_price: Optional[float] = Query(None),
     features: Optional[str] = Query(None), # Comma separated, e.g. "covered,ev"
     min_free_slots: int = Query(0),

@@ -1,10 +1,10 @@
-# SmartPark: Real-Time Parking & Space Discovery Platform
+# UrbanSpot: Real-Time Parking & Space Discovery Platform
 
 A full-stack, zero-external-dependency, offline-resilient smart parking platform seeded in **Hyderabad (Hitech City / Madhapur / Financial District)** with ₹ INR pricing.
 
 Built following the modular monolith architecture outlined in the specification:
 - **FastAPI + WebSockets Backend**: Event-sourced occupancy engine, EWMA rate projections, atomic 10-minute holds, Spot Spotter crowdsourced street spots, and tool-calling Agentic AI.
-- **React + Tailwind + MapLibre GL Frontend**: Responsive split-screen demo mode (Driver phone frame side-by-side with Operator Analytics Dashboard) and a toggleable Live Simulation Control drawer.
+- **React + Tailwind + MapLibre GL Frontend**: Responsive driver mobile interface, operator analytics dashboard, and a toggleable live simulation drawer with Zen Linen theme support.
 
 ---
 

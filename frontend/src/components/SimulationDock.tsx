@@ -52,16 +52,16 @@ export const SimulationDock: React.FC<SimulationDockProps> = ({
   };
 
   if (!isOpen) {
+    if (!simStatus.is_running) return null;
     return (
       <button
         onClick={onToggleOpen}
-        className="fixed bottom-4 right-4 bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white font-bold px-4 py-2 rounded-2xl shadow-2xl flex items-center space-x-2 text-xs border border-white/20 z-40 active:scale-95 transition"
+        className="fixed bottom-20 lg:bottom-5 right-4 bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white font-bold px-3.5 py-1.5 rounded-xl shadow-2xl flex items-center space-x-2 text-xs border border-white/20 z-30 active:scale-95 transition cursor-pointer animate-pulse"
+        title="Simulation Active - Click to open controls"
       >
-        <Flame className="w-4 h-4 text-amber-200 animate-bounce" />
-        <span>Live IoT Simulation Dock</span>
-        {simStatus.is_running && (
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
-        )}
+        <Flame className="w-3.5 h-3.5 text-amber-200" />
+        <span>Sim Active: {simStatus.scenario.replace('_', ' ').toUpperCase()}</span>
+        <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
       </button>
     );
   }

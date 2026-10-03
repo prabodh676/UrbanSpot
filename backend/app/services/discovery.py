@@ -7,7 +7,7 @@ from app.cache import cache
 async def discover_lots(
     user_lat: float,
     user_lng: float,
-    radius_m: float = 8000.0,
+    radius_m: float = 50000.0,
     required_features: Optional[List[str]] = None,
     max_price: Optional[float] = None,
     min_free_slots: int = 1,

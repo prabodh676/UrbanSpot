@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
+import { Navigation, X } from 'lucide-react';
 import { ParkingLot, StreetSpot, RouteInfo } from '../types';
 
 interface MapViewProps {
@@ -10,6 +11,10 @@ interface MapViewProps {
   onSelectStreetSpot?: (spot: StreetSpot) => void;
   activeRoute: RouteInfo | null;
   driverLocation?: { lat: number; lng: number };
+  showHeatmap?: boolean;
+  onToggleHeatmap?: () => void;
+  onNavigateToLot?: (lot: ParkingLot) => void;
+  themeMode?: 'light' | 'dark';
 }
 
 export const MapView: React.FC<MapViewProps> = ({
@@ -20,6 +25,10 @@ export const MapView: React.FC<MapViewProps> = ({
   onSelectStreetSpot,
   activeRoute,
   driverLocation = { lat: 17.4474, lng: 78.3762 },
+  showHeatmap = false,
+  onToggleHeatmap,
+  onNavigateToLot,
+  themeMode = 'dark',
 }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
@@ -31,32 +40,13 @@ export const MapView: React.FC<MapViewProps> = ({
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
 
+    const initialStyle = themeMode === 'light'
+      ? 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
+      : 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
+
     map.current = new maplibregl.Map({
       container: mapContainer.current,
-      style: {
-        version: 8,
-        sources: {
-          'osm-tiles': {
-            type: 'raster',
-            tiles: [
-              'https://a.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png',
-              'https://b.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png',
-              'https://c.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png',
-            ],
-            tileSize: 256,
-            attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-          },
-        },
-        layers: [
-          {
-            id: 'osm-tiles-layer',
-            type: 'raster',
-            source: 'osm-tiles',
-            minzoom: 0,
-            maxzoom: 19,
-          },
-        ],
-      },
+      style: initialStyle,
       center: [driverLocation.lng, driverLocation.lat],
       zoom: 13.5,
       pitch: 35,
@@ -72,11 +62,27 @@ export const MapView: React.FC<MapViewProps> = ({
       .setLngLat([driverLocation.lng, driverLocation.lat])
       .addTo(map.current);
 
+    // ResizeObserver ensures map redraws properly when mobile tabs switch or sidebar expands
+    const ro = new ResizeObserver(() => {
+      map.current?.resize();
+    });
+    ro.observe(mapContainer.current);
+
     return () => {
+      ro.disconnect();
       map.current?.remove();
       map.current = null;
     };
   }, []);
+
+  // Update map style on theme switch
+  useEffect(() => {
+    if (!map.current) return;
+    const targetStyle = themeMode === 'light'
+      ? 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
+      : 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
+    map.current.setStyle(targetStyle);
+  }, [themeMode]);
 
   // Update Driver Location
   useEffect(() => {
@@ -199,50 +205,60 @@ export const MapView: React.FC<MapViewProps> = ({
     const sourceId = 'route-source';
     const layerId = 'route-layer';
 
-    if (!activeRoute || !activeRoute.polyline || activeRoute.polyline.length === 0) {
-      if (map.current.getLayer(layerId)) map.current.removeLayer(layerId);
-      if (map.current.getSource(sourceId)) map.current.removeSource(sourceId);
-      return;
-    }
+    const applyRoute = () => {
+      if (!map.current) return;
 
-    const geojson: any = {
-      type: 'Feature',
-      properties: {},
-      geometry: {
-        type: 'LineString',
-        coordinates: activeRoute.polyline,
-      },
+      if (!activeRoute || !activeRoute.polyline || activeRoute.polyline.length === 0) {
+        if (map.current.getLayer(layerId)) map.current.removeLayer(layerId);
+        if (map.current.getSource(sourceId)) map.current.removeSource(sourceId);
+        return;
+      }
+
+      const geojson: any = {
+        type: 'Feature',
+        properties: {},
+        geometry: {
+          type: 'LineString',
+          coordinates: activeRoute.polyline,
+        },
+      };
+
+      if (map.current.getSource(sourceId)) {
+        (map.current.getSource(sourceId) as maplibregl.GeoJSONSource).setData(geojson);
+      } else {
+        map.current.addSource(sourceId, {
+          type: 'geojson',
+          data: geojson,
+        });
+
+        map.current.addLayer({
+          id: layerId,
+          type: 'line',
+          source: sourceId,
+          layout: {
+            'line-join': 'round',
+            'line-cap': 'round',
+          },
+          paint: {
+            'line-color': '#38bdf8',
+            'line-width': 5,
+            'line-opacity': 0.85,
+          },
+        });
+      }
+
+      // Fit map bounds to route
+      if (activeRoute.polyline.length > 1) {
+        const bounds = new maplibregl.LngLatBounds();
+        activeRoute.polyline.forEach(coord => bounds.extend(coord as [number, number]));
+        map.current.fitBounds(bounds, { padding: 60, maxZoom: 16 });
+      }
     };
 
-    if (map.current.getSource(sourceId)) {
-      (map.current.getSource(sourceId) as maplibregl.GeoJSONSource).setData(geojson);
+    if (map.current.isStyleLoaded()) {
+      applyRoute();
     } else {
-      map.current.addSource(sourceId, {
-        type: 'geojson',
-        data: geojson,
-      });
-
-      map.current.addLayer({
-        id: layerId,
-        type: 'line',
-        source: sourceId,
-        layout: {
-          'line-join': 'round',
-          'line-cap': 'round',
-        },
-        paint: {
-          'line-color': '#38bdf8',
-          'line-width': 5,
-          'line-opacity': 0.85,
-        },
-      });
-    }
-
-    // Fit map bounds to route
-    if (activeRoute.polyline.length > 1) {
-      const bounds = new maplibregl.LngLatBounds();
-      activeRoute.polyline.forEach(coord => bounds.extend(coord as [number, number]));
-      map.current.fitBounds(bounds, { padding: 60, maxZoom: 16 });
+      map.current.once('load', applyRoute);
     }
   }, [activeRoute]);
 
@@ -257,28 +273,225 @@ export const MapView: React.FC<MapViewProps> = ({
     }
   }, [selectedLot]);
 
+  // Heatmap Layer for Real-Time Parking Demand & Congestion
+  useEffect(() => {
+    if (!map.current) return;
+
+    const heatmapSourceId = 'parking-demand-heatmap-source';
+    const heatmapLayerId = 'parking-demand-heatmap-layer';
+
+    const updateHeatmap = () => {
+      if (!map.current) return;
+
+      if (!showHeatmap) {
+        if (map.current.getLayer(heatmapLayerId)) {
+          map.current.removeLayer(heatmapLayerId);
+        }
+        if (map.current.getSource(heatmapSourceId)) {
+          map.current.removeSource(heatmapSourceId);
+        }
+        return;
+      }
+
+      // Build GeoJSON features for lots and street spots
+      const features: any[] = [];
+
+      lots.forEach((lot) => {
+        const total = lot.total_slots || 1;
+        const occupied = lot.occupied_slots || 0;
+        // Occupancy ratio: higher occupancy = higher heat weight
+        const ratio = Math.max(0.08, Math.min(1.0, occupied / total));
+
+        features.push({
+          type: 'Feature',
+          properties: {
+            weight: ratio,
+            occupancy: ratio,
+            name: lot.name,
+          },
+          geometry: {
+            type: 'Point',
+            coordinates: [lot.lng, lot.lat],
+          },
+        });
+      });
+
+      streetSpots.forEach((spot) => {
+        if (spot.status === 'open') {
+          features.push({
+            type: 'Feature',
+            properties: {
+              weight: 0.65,
+              occupancy: 0.65,
+              name: spot.street_name,
+            },
+            geometry: {
+              type: 'Point',
+              coordinates: [spot.lng, spot.lat],
+            },
+          });
+        }
+      });
+
+      const geojson: any = {
+        type: 'FeatureCollection',
+        features,
+      };
+
+      if (map.current.getSource(heatmapSourceId)) {
+        (map.current.getSource(heatmapSourceId) as maplibregl.GeoJSONSource).setData(geojson);
+      } else {
+        map.current.addSource(heatmapSourceId, {
+          type: 'geojson',
+          data: geojson,
+        });
+
+        // Insert heatmap layer below route layer if present
+        const beforeLayer = map.current.getLayer('route-layer') ? 'route-layer' : undefined;
+
+        map.current.addLayer(
+          {
+            id: heatmapLayerId,
+            type: 'heatmap',
+            source: heatmapSourceId,
+            maxzoom: 17,
+            paint: {
+              // Increase heatmap weight based on occupancy
+              'heatmap-weight': [
+                'interpolate',
+                ['linear'],
+                ['get', 'weight'],
+                0, 0.1,
+                0.5, 0.55,
+                1, 1.0,
+              ],
+              // Increase heatmap intensity based on zoom level
+              'heatmap-intensity': [
+                'interpolate',
+                ['linear'],
+                ['zoom'],
+                10, 0.8,
+                13, 1.6,
+                15, 2.8,
+              ],
+              // Thermal color gradient: cool green -> sky blue -> amber -> vibrant orange -> crimson red
+              'heatmap-color': [
+                'interpolate',
+                ['linear'],
+                ['heatmap-density'],
+                0, 'rgba(0, 0, 0, 0)',
+                0.15, 'rgba(16, 185, 129, 0.5)',   // emerald green (open slots)
+                0.35, 'rgba(56, 189, 248, 0.65)',  // sky blue
+                0.55, 'rgba(234, 179, 8, 0.8)',    // amber (busy)
+                0.75, 'rgba(249, 115, 22, 0.9)',   // vibrant orange (high demand)
+                1.0, 'rgba(239, 68, 68, 0.98)',    // crimson red (saturation hotspot)
+              ],
+              // Heatmap radius expanding with zoom
+              'heatmap-radius': [
+                'interpolate',
+                ['linear'],
+                ['zoom'],
+                10, 22,
+                13, 45,
+                16, 80,
+              ],
+              'heatmap-opacity': 0.82,
+            },
+          },
+          beforeLayer
+        );
+      }
+    };
+
+    if (map.current.isStyleLoaded()) {
+      updateHeatmap();
+    } else {
+      map.current.once('load', updateHeatmap);
+    }
+  }, [lots, streetSpots, showHeatmap]);
+
   return (
     <div className="relative w-full h-full">
       <div ref={mapContainer} className="w-full h-full" />
-      {/* Map Legend Floating Tag */}
-      <div className="absolute top-4 left-4 bg-slate-900/90 backdrop-blur-md px-3 py-2 rounded-lg border border-slate-800 text-xs shadow-xl flex items-center space-x-3 pointer-events-none z-10">
-        <div className="flex items-center space-x-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-          <span className="text-slate-300 text-[11px]">&gt;30% Free</span>
-        </div>
-        <div className="flex items-center space-x-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-          <span className="text-slate-300 text-[11px]">10-30%</span>
-        </div>
-        <div className="flex items-center space-x-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
-          <span className="text-slate-300 text-[11px]">&lt;10% Full</span>
-        </div>
-        <div className="flex items-center space-x-1.5 pl-1 border-l border-slate-700">
-          <span className="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
-          <span className="text-cyan-300 text-[11px]">Spotter</span>
+
+      {/* Floating Dynamic Map Legend (Top-Right Dock) */}
+      <div className="absolute top-4 right-4 z-10 flex items-center">
+        <div className="bg-slate-900/95 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-700/80 text-xs shadow-xl flex items-center space-x-3 pointer-events-none">
+          {showHeatmap ? (
+            <div className="flex items-center space-x-2">
+              <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Demand:</span>
+              <div className="flex items-center space-x-1">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                <span className="text-[11px] text-slate-300">Low</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                <span className="text-[11px] text-slate-300">Moderate</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
+                <span className="text-[11px] text-rose-300 font-semibold">Surge Hotspot</span>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center space-x-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                <span className="text-slate-300 text-[11px]">&gt;30% Free</span>
+              </div>
+              <div className="flex items-center space-x-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                <span className="text-slate-300 text-[11px]">10-30%</span>
+              </div>
+              <div className="flex items-center space-x-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
+                <span className="text-slate-300 text-[11px]">&lt;10% Full</span>
+              </div>
+              <div className="flex items-center space-x-1.5 pl-1 border-l border-slate-700">
+                <span className="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
+                <span className="text-cyan-300 text-[11px]">Spotter</span>
+              </div>
+            </>
+          )}
         </div>
       </div>
+
+      {/* Floating Selected Lot Navigation Card on Map */}
+      {selectedLot && onNavigateToLot && (
+        <div className="absolute bottom-20 lg:bottom-5 left-1/2 -translate-x-1/2 z-20 w-[94%] max-w-sm bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl shadow-2xl p-3 text-slate-100 flex items-center justify-between gap-3 animate-in fade-in slide-in-from-bottom-2">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center space-x-2">
+              <span className="font-extrabold text-xs text-white truncate">{selectedLot.name}</span>
+              <span className="text-[10px] px-1.5 py-0.2 bg-indigo-950 text-indigo-300 rounded font-semibold border border-indigo-800 shrink-0">
+                ₹{selectedLot.price_per_hr}/hr
+              </span>
+            </div>
+            <p className="text-[10px] text-slate-400 truncate mt-0.5">{selectedLot.address}</p>
+            <div className="flex items-center space-x-2 mt-0.5 text-[10px]">
+              <span className="text-emerald-400 font-bold">{selectedLot.free_slots} free</span>
+              <span className="text-slate-500">/ {selectedLot.total_slots} total</span>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-1.5 shrink-0">
+            <button
+              onClick={() => onNavigateToLot(selectedLot)}
+              className="px-3 py-1.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-bold rounded-xl text-xs flex items-center space-x-1.5 shadow-lg shadow-sky-600/30 active:scale-95 transition cursor-pointer"
+              title="Start Navigation & open Google Maps"
+            >
+              <Navigation className="w-3.5 h-3.5 text-sky-200 fill-sky-200/30" />
+              <span>Navigate</span>
+            </button>
+            <button
+              onClick={() => onSelectLot(null as any)}
+              className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition cursor-pointer"
+              title="Dismiss preview"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
