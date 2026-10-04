@@ -19,8 +19,7 @@ export function getGoogleMapsNavigationUrl(
 ): string {
   const origin = `${startLat},${startLng}`;
   const destination = `${destLat},${destLng}`;
-  const queryName = destName ? `+${encodeURIComponent(destName)}` : '';
-  return `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}${queryName}&travelmode=driving`;
+  return `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=driving`;
 }
 
 export function openGoogleMapsNavigation(
