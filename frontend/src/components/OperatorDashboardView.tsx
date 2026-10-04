@@ -363,17 +363,19 @@ export const OperatorDashboardView: React.FC<OperatorDashboardViewProps> = ({
             const pct = Math.max(4, Math.min(100, Math.round(point.avg_occupancy_pct || 0)));
             return (
               <div key={idx} className="flex-1 h-full flex flex-col justify-end items-center group relative min-w-[12px]">
-                {/* Bar */}
-                <div
-                  className={`w-full rounded-t-sm transition-all duration-300 shadow-sm ${
-                    pct > 85
-                      ? 'bg-rose-500 shadow-rose-500/30'
-                      : pct > 70
-                      ? 'bg-amber-500 shadow-amber-500/30'
-                      : 'bg-indigo-500 shadow-indigo-500/30'
-                  } group-hover:brightness-125`}
-                  style={{ height: `${pct}%` }}
-                ></div>
+                {/* Bar container */}
+                <div className="w-full flex-1 flex items-end justify-center">
+                  <div
+                    className={`w-full rounded-t-sm transition-all duration-300 shadow-sm ${
+                      pct > 85
+                        ? 'bg-rose-500 shadow-rose-500/30'
+                        : pct > 70
+                        ? 'bg-amber-500 shadow-amber-500/30'
+                        : 'bg-indigo-500 shadow-indigo-500/30'
+                    } group-hover:brightness-125`}
+                    style={{ height: `${pct}%` }}
+                  ></div>
+                </div>
                 
                 {/* Hour label */}
                 <span className="text-[9px] font-mono text-slate-400 mt-1.5 select-none">{point.hour}h</span>

@@ -261,31 +261,51 @@ async def sync_supabase_lots(db: aiosqlite.Connection) -> int:
 
         if stat_count == 0:
             for dow in range(7):
+                is_weekend = dow in (5, 6)
                 for hod in range(24):
-                    is_weekend = dow in (5, 6)
-                    if 9 <= hod <= 11 or 17 <= hod <= 20:
-                        base_ratio = 0.82 if not is_weekend else 0.70
-                        arrivals = 22.0
-                        exits = 15.0
-                    elif 12 <= hod <= 16:
-                        base_ratio = 0.65
-                        arrivals = 16.0
-                        exits = 16.0
-                    elif 0 <= hod <= 6:
-                        base_ratio = 0.15
+                    if 0 <= hod <= 5:
+                        base_ratio = 0.16
                         arrivals = 2.0
-                        exits = 3.0
+                        exits = 2.5
+                    elif hod in (6, 7):
+                        base_ratio = 0.35
+                        arrivals = 7.0
+                        exits = 4.0
+                    elif hod == 8:
+                        base_ratio = 0.60 if not is_weekend else 0.42
+                        arrivals = 22.0
+                        exits = 8.0
+                    elif 9 <= hod <= 11:
+                        base_ratio = 0.85 if not is_weekend else 0.68
+                        arrivals = 30.0
+                        exits = 16.0
+                    elif 12 <= hod <= 14:
+                        base_ratio = 0.75
+                        arrivals = 20.0
+                        exits = 20.0
+                    elif 15 <= hod <= 16:
+                        base_ratio = 0.72
+                        arrivals = 17.0
+                        exits = 17.0
+                    elif 17 <= hod <= 19:
+                        base_ratio = 0.92 if not is_weekend else 0.86
+                        arrivals = 35.0
+                        exits = 22.0
+                    elif 20 <= hod <= 21:
+                        base_ratio = 0.68
+                        arrivals = 12.0
+                        exits = 22.0
                     else:
-                        base_ratio = 0.45
-                        arrivals = 10.0
-                        exits = 9.0
+                        base_ratio = 0.35
+                        arrivals = 5.0
+                        exits = 14.0
 
                     await db.execute("""
-                        INSERT OR IGNORE INTO lot_stats_hourly (lot_id, day_of_week, hour_of_day, avg_arrivals, avg_exits, avg_occupancy_ratio, peak_occupancy_ratio)
+                        INSERT OR REPLACE INTO lot_stats_hourly (lot_id, day_of_week, hour_of_day, avg_arrivals, avg_exits, avg_occupancy_ratio, peak_occupancy_ratio)
                         VALUES (?, ?, ?, ?, ?, ?, ?)
                     """, (
                         lot_id, dow, hod, arrivals, exits,
-                        base_ratio, min(1.0, base_ratio + 0.12)
+                        base_ratio, min(1.0, base_ratio + 0.08)
                     ))
 
         synced_count += 1
