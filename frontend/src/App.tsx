@@ -6,7 +6,6 @@ import {
   BarChart3,
   Map as MapIcon,
   Flame,
-  Sparkles,
   Wifi,
   WifiOff,
   Radio,
@@ -36,7 +35,6 @@ import { MapView } from './components/MapView';
 import { DriverPhoneView } from './components/DriverPhoneView';
 import { OperatorDashboardView } from './components/OperatorDashboardView';
 import { OperatorAuthModal } from './components/OperatorAuthModal';
-import { AgentChatModal } from './components/AgentChatModal';
 import { SimulationDock } from './components/SimulationDock';
 import { NavigationHUD } from './components/NavigationHUD';
 import { NavTarget, openGoogleMapsNavigation } from './services/navigation';
@@ -98,7 +96,6 @@ export const App: React.FC = () => {
   });
 
   // Modals & Panels
-  const [isAgentOpen, setIsAgentOpen] = useState(false);
   const [isSimDockOpen, setIsSimDockOpen] = useState(false);
   const [showHeatmap, setShowHeatmap] = useState(true);
   const [navigatingTarget, setNavigatingTarget] = useState<NavTarget | null>(null);
@@ -408,16 +405,6 @@ export const App: React.FC = () => {
             <span className="hidden lg:inline text-[11px]">Heatmap</span>
           </button>
 
-          {/* AI Copilot Button */}
-          <button
-            onClick={() => setIsAgentOpen(true)}
-            className="p-1.5 sm:px-2.5 sm:py-1.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl font-bold text-xs flex items-center space-x-1.5 shadow-md shadow-indigo-600/30 transition active:scale-95 shrink-0"
-            title="Open AI Parking Copilot"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-amber-300 shrink-0" />
-            <span className="hidden md:inline text-[11px]">AI Copilot</span>
-          </button>
-
           {/* IoT Simulation Dock Button */}
           <button
             onClick={() => setIsSimDockOpen((prev) => !prev)}
@@ -449,7 +436,6 @@ export const App: React.FC = () => {
                 streetSpots={streetSpots}
                 selectedLot={selectedLot}
                 onSelectLot={setSelectedLot}
-                onOpenAgent={() => setIsAgentOpen(true)}
                 activeRoute={activeRoute}
                 onNavigateToLot={(lot) => {
                   handleNavigateToLot(lot);
@@ -578,15 +564,6 @@ export const App: React.FC = () => {
         onUpdateStatus={setSimStatus}
         isOpen={isSimDockOpen}
         onToggleOpen={() => setIsSimDockOpen((prev) => !prev)}
-      />
-
-      {/* Agentic AI Assistant Modal */}
-      <AgentChatModal
-        isOpen={isAgentOpen}
-        onClose={() => setIsAgentOpen(false)}
-        onSelectLot={setSelectedLot}
-        onNavigateToLot={handleNavigateToLot}
-        userId={persona.id}
       />
 
       {/* Operator Authentication Modal (Supabase Auth) */}

@@ -16,7 +16,6 @@ from app.routers.events import router as events_router
 from app.routers.reservations import router as reservations_router
 from app.routers.street import router as street_router
 from app.routers.routing import router as routing_router
-from app.routers.agent import router as agent_router
 from app.routers.analytics import router as analytics_router
 from app.routers.sim import router as sim_router
 
@@ -50,7 +49,6 @@ app.include_router(events_router)
 app.include_router(reservations_router)
 app.include_router(street_router)
 app.include_router(routing_router)
-app.include_router(agent_router)
 app.include_router(analytics_router)
 app.include_router(sim_router)
 

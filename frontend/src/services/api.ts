@@ -205,16 +205,6 @@ export async function fetchRoute(startLat: number, startLng: number, destLat: nu
   };
 }
 
-export async function callAgentChat(prompt: string, userId: string, lat: number, lng: number): Promise<AgentResponse> {
-  const res = await fetch(`${BASE_URL}/api/agent/chat`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt, user_id: userId, lat, lng }),
-  });
-  if (!res.ok) throw new Error('Agent chat failed');
-  return res.json();
-}
-
 export async function fetchAnalytics(): Promise<AnalyticsOverview> {
   try {
     const res = await fetch(`${BASE_URL}/api/analytics/overview`);
